@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castor & Soybean Price Forecast</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .loading-overlay {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#16a34a', // Green for predicted
+                        secondary: '#f97316', // Orange for actual
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-slate-800 min-h-screen p-6">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">📊 Price Forecast Dashboard</h1>
+                <p class="text-slate-500 text-sm mt-1">AI-Powered Analytics for Castor & Soybean Markets</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    API Connected
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Sidebar Controls -->
+            <div class="lg:col-span-3 space-y-6">
+                
+                <!-- Controls Card -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-5">
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Commodity</label>
+                        <div class="relative">
+                            <select id="product" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-slate-700">
+                                <option value="Castor">Castor Seeds</option>
+                                <option value="Soybean">Soybean</option>
+                            </select>
+                            <div class="absolute right-3 top-3.5 pointer-events-none text-slate-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Forecast Period</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setTimeRange(7)" class="time-btn active px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 focus:outline-none transition-all text-slate-600 bg-white">7D</button>
+                            <button onclick="setTimeRange(15)" class="time-btn px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 focus:outline-none transition-all text-slate-600 bg-white">15D</button>
+                            <button onclick="setTimeRange(30)" class="time-btn px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 focus:outline-none transition-all text-slate-600 bg-white">30D</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Date Range</label>
+                        <div class="space-y-2">
+                            <input type="date" id="startDate" value="2025-12-01" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-600">
+                            <input type="date" id="endDate" value="2025-12-15" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-600">
+                        </div>
+                    </div>
+
+                    <button onclick="loadForecast()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-lg shadow-slate-900/20 transition-all transform active:scale-95 flex justify-center items-center gap-2">
+                        <span>Generate Forecast</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Stats Card -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-sm font-bold text-slate-900 mb-4">Market Snapshot</h3>
+                    <div class="space-y-4" id="stats">
+                        <!-- Stats will be injected here -->
+                        <div class="text-center py-4 text-slate-400 text-sm">Load forecast to view stats</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Chart Area -->
+            <div class="lg:col-span-9 space-y-6">
+                
+                <!-- Chart Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 h-[500px] relative flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Price Forecast</h3>
+                            <p class="text-sm text-slate-500">Historical data vs AI predictions</p>
+                        </div>
+                        <div class="flex bg-gray-100 p-1 rounded-lg">
+                            <button onclick="switchChartType('line')" class="chart-btn active px-4 py-1.5 text-sm font-medium rounded-md transition-all text-slate-600">Line</button>
+                            <button onclick="switchChartType('candle')" class="chart-btn px-4 py-1.5 text-sm font-medium rounded-md transition-all text-slate-600">Candle</button>
+                        </div>
+                    </div>
+                    
+                    <div id="forecastChart" class="flex-1 w-full rounded-xl overflow-hidden">
+                        <div class="h-full flex items-center justify-center text-slate-400 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                            <div class="text-center">
+                                <svg class="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+                                <p>Select parameters and click "Generate Forecast"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+            <div id="toastIcon"></div>
+            <div id="toastMessage" class="font-medium"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'castor_b3d9e8bfad004a0d899a448992c149fa9';
+        // Hardcoded for stability as per user request
+        const API_URL = 'http://127.0.0.1:5000';
+        let forecastData = null;
+        let chartType = 'line';
+        let currentTab = 'combined';
+
+        // UI Helpers
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msg = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+            
+            msg.textContent = message;
+            icon.innerHTML = type === 'success' 
+                ? '<svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                : '<svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        function setTimeRange(days) {
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-900', 'text-white', 'border-slate-900');
+                btn.classList.add('bg-white', 'text-slate-600', 'border-gray-200');
+            });
+            event.target.classList.remove('bg-white', 'text-slate-600', 'border-gray-200');
+            event.target.classList.add('bg-slate-900', 'text-white', 'border-slate-900');
+            
+            const today = new Date('2025-12-01');
+            const start = today.toISOString().split('T')[0];
+            const end = new Date(today.getTime() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            
+            document.getElementById('startDate').value = start;
+            document.getElementById('endDate').value = end;
+        }
+
+        function switchChartType(type) {
+            chartType = type;
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'shadow-sm', 'text-slate-900');
+                btn.classList.add('text-slate-600');
+            });
+            event.target.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
+            event.target.classList.remove('text-slate-600');
+            
+            if (forecastData) updateMainChart();
+        }
+
+
+
+        // Data Logic
+        async function loadForecast() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const product = document.getElementById('product').value;
+            
+            if (!startDate || !endDate) {
+                showToast('Please select valid dates', 'error');
+                return;
+            }
+            
+            const btn = document.querySelector('button[onclick="loadForecast()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
+            btn.disabled = true;
+
+            try {
+                console.log('Starting forecast fetch...');
+                const url = `${API_URL}/api/forecast?start_date=${startDate}&end_date=${endDate}&product=${product}`;
+                console.log('Fetching URL:', url);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'X-API-Key': API_KEY
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('API Error Response:', text);
+                    throw new Error('API request failed: ' + response.status);
+                }
+                
+                forecastData = await response.json();
+                console.log('Forecast Data received:', forecastData);
+                
+                if (forecastData.status !== 'success') throw new Error(forecastData.message);
+                
+                showToast('Forecast generated successfully');
+                updateStats();
+                updateMainChart();
+                console.log('Charts updated');
+
+            } catch (error) {
+                console.error('Detailed Fetch Error:', error);
+                showToast('Failed to load forecast data: ' + error.message, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function updateStats() {
+            if (!forecastData?.forecast) return;
+            
+            const forecast = forecastData.forecast;
+            const prices = forecast.map(d => d.average_price);
+            const currentPrice = forecastData.last_known_price;
+            const avgPrice = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(0);
+            const minPrice = Math.min(...prices).toFixed(0);
+            const maxPrice = Math.max(...prices).toFixed(0);
+            
+            const trend = avgPrice > currentPrice ? 'up' : 'down';
+            const trendColor = trend === 'up' ? 'text-green-500' : 'text-red-500';
+            const trendIcon = trend === 'up' ? '↑' : '↓';
+
+            document.getElementById('stats').innerHTML = `
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div class="text-xs text-slate-500 mb-1">Current Market Price</div>
+                    <div class="text-2xl font-bold text-slate-900">₹${currentPrice}</div>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div class="text-xs text-slate-500 mb-1">Forecast Average</div>
+                    <div class="text-2xl font-bold ${trendColor} flex items-center gap-2">
+                        ₹${avgPrice} <span class="text-sm bg-white px-2 py-0.5 rounded-full shadow-sm border border-gray-100">${trendIcon}</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div class="text-xs text-slate-500 mb-1">Low</div>
+                        <div class="text-lg font-bold text-slate-900">₹${minPrice}</div>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div class="text-xs text-slate-500 mb-1">High</div>
+                        <div class="text-lg font-bold text-slate-900">₹${maxPrice}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getCommonLayout(title) {
+            return {
+                title: false,
+                autosize: true,
+                font: { family: 'Inter, sans-serif' },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                margin: { l: 50, r: 20, t: 20, b: 40 },
+                xaxis: { 
+                    gridcolor: '#f1f5f9',
+                    zerolinecolor: '#f1f5f9',
+                    tickfont: { color: '#64748b', size: 11 }
+                },
+                yaxis: { 
+                    gridcolor: '#f1f5f9',
+                    zerolinecolor: '#f1f5f9',
+                    tickfont: { color: '#64748b', size: 11 },
+                    tickprefix: '₹'
+                },
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    yanchor: 'bottom',
+                    y: 1.02,
+                    xanchor: 'right',
+                    x: 1,
+                    font: { size: 12, color: '#64748b' }
+                },
+                hovermode: 'x unified'
+            };
+        }
+
+        function updateMainChart() {
+            if (!forecastData?.forecast) return;
+
+            const historical = forecastData.historical || [];
+            const forecast = forecastData.forecast;
+            
+            const histDates = historical.map(d => d.date);
+            const histPrices = historical.map(d => d.actual_price);
+            const foreDates = forecast.map(d => d.date);
+            const forePrices = forecast.map(d => d.average_price);
+
+            let traces = [];
+
+            // Historical Trace (Professional Blue)
+            traces.push({
+                x: histDates,
+                y: histPrices,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Actual',
+                line: { color: '#2563eb', width: 2 }, // Thinner, professional blue
+                fill: 'tozeroy', // Add subtle gradient fill
+                fillcolor: 'rgba(37, 99, 235, 0.05)',
+                connectgaps: true,
+                hovertemplate: '<b>Actual</b><br>Date: %{x}<br>Price: ₹%{y:.2f}<extra></extra>'
+            });
+
+            if (chartType === 'line') {
+                // Forecast Trace (Vibrant Green)
+                traces.push({
+                    x: foreDates,
+                    y: forePrices,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Predicted',
+                    line: { color: '#16a34a', width: 2, dash: 'dash' }, // Thinner, dashed green
+                    hovertemplate: '<b>Predicted</b><br>Date: %{x}<br>Price: ₹%{y:.2f}<extra></extra>'
+                });
+            } else {
+                // Candle Trace
+                const arimaPrices = forecast.map(d => d.arima_price);
+                const lstmPrices = forecast.map(d => d.lstm_price);
+                
+                traces.push({
+                    x: foreDates,
+                    open: arimaPrices,
+                    high: arimaPrices.map((p, i) => Math.max(p, lstmPrices[i])),
+                    low: arimaPrices.map((p, i) => Math.min(p, lstmPrices[i])),
+                    close: lstmPrices,
+                    type: 'candlestick',
+                    name: 'Forecast Range',
+                    increasing: { line: { color: '#16a34a', width: 1 } },
+                    decreasing: { line: { color: '#ef4444', width: 1 } }
+                });
+            }
+
+            const layout = getCommonLayout();
+            // Add range slider for better navigation if needed, but keeping it clean for now
+            // layout.xaxis.rangeslider = { visible: false };
+            
+            console.log('Plotting traces:', traces);
+            const chartDiv = document.getElementById('forecastChart');
+            Plotly.purge(chartDiv);
+            Plotly.newPlot(chartDiv, traces, layout, { displayModeBar: false, responsive: true });
+        }
+
+
+
+        // Initialize default state
+        document.querySelectorAll('.time-btn')[0].classList.add('bg-slate-900', 'text-white', 'border-slate-900');
+        document.querySelectorAll('.time-btn')[0].classList.remove('bg-white', 'text-slate-600', 'border-gray-200');
+
+    </script>
+</body>
+</html>

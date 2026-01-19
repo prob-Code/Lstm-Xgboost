@@ -1,0 +1,30 @@
+{
+  "castor_d167aa169b5e4219a66779e45fbaaefe": {
+    "name": "demo",
+    "created_at": "2025-12-04T23:07:15.589893",
+    "last_used": "2025-12-06T17:50:32.434194",
+    "requests_count": 73,
+    "active": true
+  },
+  "castor_4226de7639d94586bfba26df2b5d6acf": {
+    "name": "react_dashboard",
+    "created_at": "2025-12-06T08:57:05.002740",
+    "last_used": null,
+    "requests_count": 0,
+    "active": true
+  },
+  "castor_b9dbbcbecdd742b6b2a56a5afb221b8a": {
+    "name": "react_dashboard_v2",
+    "created_at": "2025-12-06T08:57:43.625617",
+    "last_used": null,
+    "requests_count": 0,
+    "active": true
+  },
+  "castor_b3d9e8bfad004a0d899a48992c149fa9": {
+    "name": "react_dashboard_v3",
+    "created_at": "2025-12-06T08:57:57.195578",
+    "last_used": null,
+    "requests_count": 0,
+    "active": true
+  }
+}
